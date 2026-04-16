@@ -1,0 +1,1160 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Health Companion</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <style>
+    :root {
+      --primary: #10b981;
+      --primary-dark: #059669;
+      --secondary: #8b5cf6;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+      color: var(--text-primary);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .app-wrapper {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .dashboard-container {
+      display: flex;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 280px;
+      background: rgba(15, 23, 42, 0.8);
+      border-right: 1px solid rgba(148, 163, 184, 0.1);
+      padding: 24px 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-item {
+      padding: 12px 20px;
+      margin: 4px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .sidebar-item:hover {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--primary);
+    }
+
+    .sidebar-item.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .header-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .health-card {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(51, 65, 85, 0.4) 100%);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .health-card:hover {
+      border-color: rgba(16, 185, 129, 0.3);
+      transform: translateY(-4px);
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .metric-box {
+      background: rgba(51, 65, 85, 0.4);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    .button.secondary {
+      background: rgba(148, 163, 184, 0.1);
+      color: var(--text-primary);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .button.secondary:hover {
+      background: rgba(148, 163, 184, 0.2);
+    }
+
+    .habit-item {
+      background: rgba(51, 65, 85, 0.4);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 4px solid var(--primary);
+    }
+
+    .habit-item.missed {
+      border-left-color: var(--danger);
+    }
+
+    .habit-info h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .habit-info p {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .streak {
+      text-align: right;
+    }
+
+    .streak-number {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .streak-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .notification {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .notification.warning {
+      background: rgba(245, 158, 11, 0.1);
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .notification.danger {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .diet-plan {
+      background: rgba(51, 65, 85, 0.4);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border-left: 4px solid var(--secondary);
+    }
+
+    .meal-time {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .meal-items {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-primary);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(148, 163, 184, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .section {
+      display: none;
+    }
+
+    .section.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      stroke-width: 2;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.2);
+      border-radius: 3px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.3);
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-secondary);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--text-primary);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: rgba(51, 65, 85, 0.4);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .modal-actions .button {
+      flex: 1;
+    }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body>
+  <div class="app-wrapper">
+   <div class="dashboard-container"><!-- Sidebar -->
+    <div class="sidebar scrollbar-thin">
+     <div style="padding: 0 20px; margin-bottom: 24px;">
+      <h1 style="font-size: 20px; font-weight: 700; color: var(--primary);">💚 Health</h1>
+     </div>
+     <div id="sidebar-menu">
+      <div class="sidebar-item active" data-section="dashboard"><i class="icon" data-lucide="activity"></i> <span>Dashboard</span>
+      </div>
+      <div class="sidebar-item" data-section="health-profile"><i class="icon" data-lucide="user"></i> <span>Health Profile</span>
+      </div>
+      <div class="sidebar-item" data-section="monitoring"><i class="icon" data-lucide="heart-pulse"></i> <span>Monitoring</span>
+      </div>
+      <div class="sidebar-item" data-section="medicines"><i class="icon" data-lucide="pill"></i> <span>Medicines</span>
+      </div>
+      <div class="sidebar-item" data-section="diet"><i class="icon" data-lucide="apple"></i> <span>Diet Plan</span>
+      </div>
+      <div class="sidebar-item" data-section="habits"><i class="icon" data-lucide="target"></i> <span>Habits</span>
+      </div>
+      <div class="sidebar-item" data-section="contacts"><i class="icon" data-lucide="users"></i> <span>Contacts</span>
+      </div>
+      <div class="sidebar-item" data-section="stress"><i class="icon" data-lucide="brain"></i> <span>Stress Relief</span>
+      </div>
+     </div>
+    </div><!-- Main Content -->
+    <div class="main-content scrollbar-thin"><!-- Dashboard Section -->
+     <div id="dashboard" class="section active">
+      <div class="header">
+       <h1 class="header-title">Dashboard</h1>
+       <div style="display: flex; gap: 12px;"><button class="button secondary"> <i class="icon" data-lucide="bell"></i> Alerts </button>
+       </div>
+      </div><!-- Health Overview -->
+      <div class="health-card">
+       <h3 class="card-title">📊 Health Overview</h3>
+       <div class="metric-grid">
+        <div class="metric-box">
+         <div class="metric-value">
+          72
+         </div>
+         <div class="metric-label">
+          Heart Rate
+         </div>
+        </div>
+        <div class="metric-box">
+         <div class="metric-value">
+          8.2k
+         </div>
+         <div class="metric-label">
+          Steps
+         </div>
+        </div>
+        <div class="metric-box">
+         <div class="metric-value">
+          7h 30m
+         </div>
+         <div class="metric-label">
+          Sleep
+         </div>
+        </div>
+        <div class="metric-box">
+         <div class="metric-value">
+          68%
+         </div>
+         <div class="metric-label">
+          Hydration
+         </div>
+        </div>
+       </div>
+      </div><!-- Health Alerts -->
+      <div class="health-card">
+       <h3 class="card-title">🚨 Health Alerts</h3>
+       <div class="notification"><i class="icon" data-lucide="alert-circle" style="color: var(--primary); flex-shrink: 0;"></i>
+        <div><strong>Good!</strong>
+         <p style="font-size: 12px; margin-top: 4px;">Your health metrics are within normal range. Keep up the good work!</p>
+        </div>
+       </div>
+      </div><!-- Today's Tasks -->
+      <div class="health-card">
+       <h3 class="card-title">✅ Today's Health Tasks</h3>
+       <div class="habit-item">
+        <div class="habit-info">
+         <h4>💊 Take Morning Medicines</h4>
+         <p>Due: 08:00 AM</p>
+        </div><button class="button" style="font-size: 12px; padding: 8px 12px;">Done</button>
+       </div>
+       <div class="habit-item">
+        <div class="habit-info">
+         <h4>🚶 30-min Walk</h4>
+         <p>Due: 06:00 PM</p>
+        </div><button class="button secondary" style="font-size: 12px; padding: 8px 12px;">Log</button>
+       </div>
+       <div class="habit-item">
+        <div class="habit-info">
+         <h4>💧 Drink 8 Glasses of Water</h4>
+         <p>Progress: 5/8 glasses</p>
+        </div>
+        <div class="progress-bar">
+         <div class="progress-fill" style="width: 62.5%;"></div>
+        </div>
+       </div>
+      </div>
+     </div><!-- Health Profile Section -->
+     <div id="health-profile" class="section">
+      <div class="header">
+       <h1 class="header-title">Health Profile</h1><button class="button" onclick="openModal('profileModal')"> <i class="icon" data-lucide="edit"></i> Edit Profile </button>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">👤 Personal Information</h3>
+       <div class="metric-grid">
+        <div class="metric-box" style="text-align: left;">
+         <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">
+          Age
+         </div>
+         <div style="font-size: 18px; color: var(--text-primary);">
+          28 years
+         </div>
+        </div>
+        <div class="metric-box" style="text-align: left;">
+         <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">
+          Weight
+         </div>
+         <div style="font-size: 18px; color: var(--text-primary);">
+          72 kg
+         </div>
+        </div>
+        <div class="metric-box" style="text-align: left;">
+         <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">
+          Height
+         </div>
+         <div style="font-size: 18px; color: var(--text-primary);">
+          180 cm
+         </div>
+        </div>
+        <div class="metric-box" style="text-align: left;">
+         <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">
+          BMI
+         </div>
+         <div style="font-size: 18px; color: var(--text-primary);">
+          22.2
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">🔬 Lab Values</h3>
+       <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.1);"><span>Hemoglobin</span> <strong style="color: var(--primary);">13.5 g/dL</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.1);"><span>Blood Sugar (Fasting)</span> <strong style="color: var(--primary);">95 mg/dL</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.1);"><span>Blood Pressure</span> <strong style="color: var(--primary);">120/80 mmHg</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between;"><span>Cholesterol</span> <strong style="color: var(--primary);">180 mg/dL</strong>
+        </div>
+       </div>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">📋 Medical History</h3>
+       <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px;">
+        <div style="padding: 8px; background: rgba(51, 65, 85, 0.4); border-radius: 6px;">
+         ✓ No allergies recorded
+        </div>
+        <div style="padding: 8px; background: rgba(51, 65, 85, 0.4); border-radius: 6px;">
+         ✓ Vaccinated (COVID, Flu)
+        </div>
+        <div style="padding: 8px; background: rgba(51, 65, 85, 0.4); border-radius: 6px;">
+         ✓ Last checkup: 3 months ago
+        </div>
+       </div>
+      </div>
+     </div><!-- Monitoring Section -->
+     <div id="monitoring" class="section">
+      <div class="header">
+       <h1 class="header-title">Smart Health Monitoring</h1>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">❤️ Real-time Metrics</h3>
+       <div class="metric-grid">
+        <div class="metric-box">
+         <div class="metric-value" style="color: var(--danger);">
+          72
+         </div>
+         <div class="metric-label">
+          Heart Rate (bpm)
+         </div>
+         <div class="progress-bar">
+          <div class="progress-fill" style="width: 72%; background: var(--primary);"></div>
+         </div>
+        </div>
+        <div class="metric-box">
+         <div class="metric-value">
+          98.6°
+         </div>
+         <div class="metric-label">
+          Temperature
+         </div>
+         <div class="progress-bar">
+          <div class="progress-fill" style="width: 85%;"></div>
+         </div>
+        </div>
+        <div class="metric-box">
+         <div class="metric-value">
+          8.2k
+         </div>
+         <div class="metric-label">
+          Steps Today
+         </div>
+         <div class="progress-bar">
+          <div class="progress-fill" style="width: 41%;"></div>
+         </div>
+        </div>
+        <div class="metric-box">
+         <div class="metric-value">
+          7h 30m
+         </div>
+         <div class="metric-label">
+          Sleep Quality
+         </div>
+         <div class="progress-bar">
+          <div class="progress-fill" style="width: 75%;"></div>
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">📈 Health Insights</h3>
+       <div class="notification"><i class="icon" data-lucide="trending-up" style="color: var(--primary); flex-shrink: 0;"></i>
+        <div><strong>Activity Trend</strong>
+         <p style="font-size: 12px; margin-top: 4px;">Your daily steps are increasing. Great consistency this week!</p>
+        </div>
+       </div>
+       <div class="notification"><i class="icon" data-lucide="moon" style="color: var(--secondary); flex-shrink: 0;"></i>
+        <div><strong>Sleep Pattern</strong>
+         <p style="font-size: 12px; margin-top: 4px;">You're sleeping 30 minutes more than last week. Keep this routine!</p>
+        </div>
+       </div>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">⚠️ Anomaly Detection</h3>
+       <div style="padding: 16px; background: rgba(51, 65, 85, 0.4); border-radius: 8px; font-size: 14px;">
+        <p style="margin-bottom: 8px;">✅ No abnormal patterns detected</p>
+        <p style="font-size: 12px; color: var(--text-secondary);">All metrics are within your normal range based on historical data.</p>
+       </div>
+      </div>
+     </div><!-- Medicines Section -->
+     <div id="medicines" class="section">
+      <div class="header">
+       <h1 class="header-title">Medicine Management</h1><button class="button" onclick="openModal('medicineModal')"> <i class="icon" data-lucide="plus"></i> Add Medicine </button>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">💊 Today's Medicines</h3>
+       <div class="habit-item">
+        <div class="habit-info">
+         <h4>Aspirin 100mg</h4>
+         <p>Morning • 08:00 AM • ✅ Taken</p>
+        </div><span style="font-size: 12px; color: var(--primary);">Done</span>
+       </div>
+       <div class="habit-item">
+        <div class="habit-info">
+         <h4>Vitamin D3 1000IU</h4>
+         <p>Noon • 01:00 PM • ⏳ Pending</p>
+        </div><button class="button" style="font-size: 12px; padding: 8px 12px;">Took it</button>
+       </div>
+       <div class="habit-item missed">
+        <div class="habit-info">
+         <h4>Multivitamin</h4>
+         <p>Evening • 08:00 PM • ❌ Missed</p>
+        </div><button class="button secondary" style="font-size: 12px; padding: 8px 12px;">Log Late</button>
+       </div>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">🔍 Medicine Scanner</h3><button class="button" style="width: 100%; justify-content: center;"> <i class="icon" data-lucide="camera"></i> Scan Medicine Package </button>
+       <p style="font-size: 12px; color: var(--text-secondary); margin-top: 12px;">Point your camera at the medicine package to get instant details about dosage, warnings, and interactions.</p>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">📋 My Medicines</h3>
+       <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="padding: 12px; background: rgba(51, 65, 85, 0.4); border-radius: 8px;">
+         <div style="font-weight: 600; margin-bottom: 4px;">
+          Aspirin 100mg
+         </div>
+         <div style="font-size: 12px; color: var(--text-secondary);">
+          Daily • After breakfast • Prescribed for heart health
+         </div>
+        </div>
+        <div style="padding: 12px; background: rgba(51, 65, 85, 0.4); border-radius: 8px;">
+         <div style="font-weight: 600; margin-bottom: 4px;">
+          Vitamin D3 1000IU
+         </div>
+         <div style="font-size: 12px; color: var(--text-secondary);">
+          Daily • Morning • Supplements
+         </div>
+        </div>
+       </div>
+      </div>
+     </div><!-- Diet Plan Section -->
+     <div id="diet" class="section">
+      <div class="header">
+       <h1 class="header-title">AI-Powered Diet Plan</h1>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">🎯 Personalized Diet Recommendation</h3>
+       <div class="notification" style="margin-bottom: 16px;"><i class="icon" data-lucide="info" style="color: var(--secondary); flex-shrink: 0;"></i>
+        <div><strong>Based on Your Health Data</strong>
+         <p style="font-size: 12px; margin-top: 4px;">Hemoglobin: 13.5 g/dL (Optimal) | Sugar Level: 95 mg/dL (Normal) | BMI: 22.2 (Healthy)</p>
+        </div>
+       </div>
+       <p style="font-size: 14px; line-height: 1.6; color: var(--text-primary);">Your current health metrics are excellent! Focus on maintaining this balance with a balanced diet rich in whole grains, lean proteins, and colorful vegetables.</p>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">🍽️ Today's Meal Plan</h3>
+       <div class="diet-plan">
+        <div class="meal-time">
+         🌅 Breakfast (7:00 AM)
+        </div>
+        <div class="meal-items">
+         • Oatmeal with berries and honey<br>
+          • 1 banana<br>
+          • Green tea
+        </div>
+        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">
+         Calories: ~350 | Protein: 12g | Iron: 3.2mg
+        </div>
+       </div>
+       <div class="diet-plan">
+        <div class="meal-time">
+         ☀️ Lunch (1:00 PM)
+        </div>
+        <div class="meal-items">
+         • Grilled chicken breast (150g)<br>
+          • Brown rice (1 cup)<br>
+          • Mixed leafy greens salad<br>
+          • Olive oil dressing
+        </div>
+        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">
+         Calories: ~550 | Protein: 35g | Iron: 2.1mg
+        </div>
+       </div>
+       <div class="diet-plan">
+        <div class="meal-time">
+         🌙 Dinner (7:00 PM)
+        </div>
+        <div class="meal-items">
+         • Baked salmon (120g)<br>
+          • Sweet potato<br>
+          • Steamed broccoli<br>
+          • Lemon herb seasoning
+        </div>
+        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">
+         Calories: ~480 | Protein: 32g | Omega-3: High
+        </div>
+       </div>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">💧 Hydration Reminder</h3>
+       <div style="text-align: center; padding: 20px;">
+        <div class="metric-value">
+         8
+        </div>
+        <div class="metric-label">
+         glasses recommended today
+        </div>
+        <div class="progress-bar" style="margin-top: 16px;">
+         <div class="progress-fill" style="width: 62.5%;"></div>
+        </div>
+        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">You've had 5 glasses today</p>
+       </div>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">🥗 Nutrition Breakdown</h3>
+       <div class="metric-grid" style="gap: 12px;">
+        <div style="background: rgba(51, 65, 85, 0.4); padding: 16px; border-radius: 8px; text-align: center;">
+         <div style="font-size: 18px; font-weight: 700; color: var(--primary);">
+          1,380
+         </div>
+         <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+          Daily Calories
+         </div>
+        </div>
+        <div style="background: rgba(51, 65, 85, 0.4); padding: 16px; border-radius: 8px; text-align: center;">
+         <div style="font-size: 18px; font-weight: 700; color: var(--secondary);">
+          79g
+         </div>
+         <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+          Protein
+         </div>
+        </div>
+        <div style="background: rgba(51, 65, 85, 0.4); padding: 16px; border-radius: 8px; text-align: center;">
+         <div style="font-size: 18px; font-weight: 700; color: var(--warning);">
+          5.3mg
+         </div>
+         <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+          Iron Intake
+         </div>
+        </div>
+       </div>
+      </div>
+     </div><!-- Habits Section -->
+     <div id="habits" class="section">
+      <div class="header">
+       <h1 class="header-title">Habit &amp; Lifestyle Tracker</h1><button class="button" onclick="openModal('habitModal')"> <i class="icon" data-lucide="plus"></i> Add Habit </button>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">🎯 Active Habits</h3>
+       <div class="habit-item">
+        <div class="habit-info">
+         <h4>🚶 30-min Daily Walk</h4>
+         <p>Last done: Today • Streak: 12 days</p>
+        </div>
+        <div class="streak">
+         <div class="streak-number">
+          12
+         </div>
+         <div class="streak-label">
+          day streak
+         </div>
+        </div>
+       </div>
+       <div class="habit-item">
+        <div class="habit-info">
+         <h4>😴 7-8 hrs Sleep</h4>
+         <p>Last done: Yesterday • Streak: 8 days</p>
+        </div>
+        <div class="streak">
+         <div class="streak-number">
+          8
+         </div>
+         <div class="streak-label">
+          day streak
+         </div>
+        </div>
+       </div>
+       <div class="habit-item">
+        <div class="habit-info">
+         <h4>💧 Drink Water</h4>
+         <p>Last done: Today • Streak: 5 days</p>
+        </div>
+        <div class="streak">
+         <div class="streak-number">
+          5
+         </div>
+         <div class="streak-label">
+          day streak
+         </div>
+        </div>
+       </div>
+       <div class="habit-item missed">
+        <div class="habit-info">
+         <h4>🧘 Meditation</h4>
+         <p>Last done: 2 days ago • Streak: 0 days</p>
+        </div>
+        <div class="streak" style="color: var(--danger);">
+         <div class="streak-number">
+          0
+         </div>
+         <div class="streak-label">
+          day streak
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">📊 Weekly Summary</h3>
+       <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.1);"><span>Exercise</span>
+         <div style="display: flex; gap: 4px;"><span style="color: var(--primary);">✓</span> <span style="color: var(--primary);">✓</span> <span style="color: var(--primary);">✓</span> <span style="color: var(--primary);">✓</span> <span style="color: var(--primary);">✓</span> <span style="color: var(--danger);">✗</span> <span style="color: var(--warning);">?</span>
+         </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.1);"><span>Meditation</span>
+         <div style="display: flex; gap: 4px;"><span style="color: var(--primary);">✓</span> <span style="color: var(--primary);">✓</span> <span style="color: var(--danger);">✗</span> <span style="color: var(--danger);">✗</span> <span style="color: var(--danger);">✗</span> <span style="color: var(--danger);">✗</span> <span style="color: var(--danger);">✗</span>
+         </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;"><span>Skincare</span>
+         <div style="display: flex; gap: 4px;"><span style="color: var(--primary);">✓</span> <span style="color: var(--primary);">✓</span> <span style="color: var(--primary);">✓</span> <span style="color: var(--primary);">✓</span> <span style="color: var(--primary);">✓</span> <span style="color: var(--primary);">✓</span> <span style="color: var(--primary);">✓</span>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div><!-- Contacts Section -->
+     <div id="contacts" class="section">
+      <div class="header">
+       <h1 class="header-title">Emergency Contacts</h1><button class="button" onclick="openModal('contactModal')"> <i class="icon" data-lucide="plus"></i> Add Contact </button>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">👥 Your Contacts</h3>
+       <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="padding: 12px; background: rgba(51, 65, 85, 0.4); border-radius: 8px; border-left: 4px solid var(--primary);">
+         <div style="font-weight: 600; margin-bottom: 4px;">
+          Mom
+         </div>
+         <div style="font-size: 12px; color: var(--text-secondary);">
+          +91 98765 43210 • Primary Contact
+         </div>
+        </div>
+        <div style="padding: 12px; background: rgba(51, 65, 85, 0.4); border-radius: 8px; border-left: 4px solid var(--secondary);">
+         <div style="font-weight: 600; margin-bottom: 4px;">
+          Dr. Sharma
+         </div>
+         <div style="font-size: 12px; color: var(--text-secondary);">
+          +91 98765 12345 • Personal Doctor
+         </div>
+        </div>
+        <div style="padding: 12px; background: rgba(51, 65, 85, 0.4); border-radius: 8px; border-left: 4px solid var(--warning);">
+         <div style="font-weight: 600; margin-bottom: 4px;">
+          City Hospital
+         </div>
+         <div style="font-size: 12px; color: var(--text-secondary);">
+          +91 44 2222 2222 • Emergency
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">🔔 Notification Settings</h3>
+       <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.1);"><span>Notify on missed medicines</span> <input type="checkbox" checked style="cursor: pointer;">
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.1);"><span>Notify on stress detection</span> <input type="checkbox" checked style="cursor: pointer;">
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;"><span>Notify on anomalies</span> <input type="checkbox" checked style="cursor: pointer;">
+        </div>
+       </div>
+      </div>
+     </div><!-- Stress Relief Section -->
+     <div id="stress" class="section">
+      <div class="header">
+       <h1 class="header-title">Stress Detection &amp; Relief</h1>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">😌 Current Stress Level</h3>
+       <div style="text-align: center; padding: 20px;">
+        <div class="metric-value" style="color: var(--primary);">
+         Low
+        </div>
+        <div class="progress-bar" style="margin-top: 16px; background: rgba(16, 185, 129, 0.2);">
+         <div class="progress-fill" style="width: 25%; background: var(--primary);"></div>
+        </div>
+        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">Your heart rate variability suggests relaxation</p>
+       </div>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">🎵 Loved Ones Voice Notes</h3>
+       <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="padding: 12px; background: rgba(51, 65, 85, 0.4); border-radius: 8px;">
+         <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+           <div style="font-weight: 600; margin-bottom: 4px;">
+            Mom's Voice Note
+           </div>
+           <div style="font-size: 12px; color: var(--text-secondary);">
+            1:24 • "Take care of yourself, beta..."
+           </div>
+          </div><button class="button secondary" style="padding: 8px 12px; font-size: 12px;"> <i class="icon" data-lucide="play"></i> </button>
+         </div>
+        </div>
+        <div style="padding: 12px; background: rgba(51, 65, 85, 0.4); border-radius: 8px;">
+         <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+           <div style="font-weight: 600; margin-bottom: 4px;">
+            Best Friend's Message
+           </div>
+           <div style="font-size: 12px; color: var(--text-secondary);">
+            0:45 • "You're doing great, stay positive!"
+           </div>
+          </div><button class="button secondary" style="padding: 8px 12px; font-size: 12px;"> <i class="icon" data-lucide="play"></i> </button>
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">🧘 Relaxation Techniques</h3>
+       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"><button class="button secondary" style="justify-content: center;"> <i class="icon" data-lucide="wind"></i> Breathing </button> <button class="button secondary" style="justify-content: center;"> <i class="icon" data-lucide="music"></i> Meditation </button> <button class="button secondary" style="justify-content: center;"> <i class="icon" data-lucide="heart"></i> Yoga </button> <button class="button secondary" style="justify-content: center;"> <i class="icon" data-lucide="book"></i> Read </button>
+       </div>
+      </div>
+      <div class="health-card">
+       <h3 class="card-title">💓 Breathing Exercise</h3>
+       <div style="text-align: center; padding: 20px;">
+        <div id="breathing-circle" style="width: 120px; height: 120px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 18px; animation: breathe 4s infinite;">
+         Breathe
+        </div><button class="button"> <i class="icon" data-lucide="play"></i> Start Exercise </button>
+        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 12px;">4-7-8 breathing technique • 5 minutes</p>
+       </div>
+      </div>
+      <style>
+            @keyframes breathe {
+              0%, 100% { transform: scale(1); }
+              50% { transform: scale(1.3); }
+            }
+          </style>
+     </div>
+    </div>
+   </div>
+  </div><!-- Modals -->
+  <div id="profileModal" class="modal-overlay">
+   <div class="modal">
+    <h2 class="modal-title">Edit Health Profile</h2>
+    <form onsubmit="handleProfileSubmit(event)">
+     <div class="form-group"><label class="form-label">Age</label> <input type="number" class="form-input" placeholder="28" value="28">
+     </div>
+     <div class="form-group"><label class="form-label">Weight (kg)</label> <input type="number" class="form-input" placeholder="72" value="72">
+     </div>
+     <div class="form-group"><label class="form-label">Height (cm)</label> <input type="number" class="form-input" placeholder="180" value="180">
+     </div>
+     <div class="form-group"><label class="form-label">Medical Conditions</label> <textarea class="form-textarea" placeholder="e.g., Diabetes, Hypertension"></textarea>
+     </div>
+     <div class="modal-actions"><button type="button" class="button secondary" onclick="closeModal('profileModal')">Cancel</button> <button type="submit" class="button">Save Changes</button>
+     </div>
+    </form>
+   </div>
+  </div>
+  <div id="medicineModal" class="modal-overlay">
+   <div class="modal">
+    <h2 class="modal-title">Add Medicine</h2>
+    <form onsubmit="handleMedicineSubmit(event)">
+     <div class="form-group"><label class="form-label">Medicine Name</label> <input type="text" class="form-input" placeholder="e.g., Aspirin">
+     </div>
+     <div class="form-group"><label class="form-label">Dosage</label> <input type="text" class="form-input" placeholder="e.g., 100mg">
+     </div>
+     <div class="form-group"><label class="form-label">Frequency</label> <select class="form-select"> <option>Once daily</option> <option>Twice daily</option> <option>Thrice daily</option> <option>As needed</option> </select>
+     </div>
+     <div class="modal-actions"><button type="button" class="button secondary" onclick="closeModal('medicineModal')">Cancel</button> <button type="submit" class="button">Add Medicine</button>
+     </div>
+    </form>
+   </div>
+  </div>
+  <div id="habitModal" class="modal-overlay">
+   <div class="modal">
+    <h2 class="modal-title">Add New Habit</h2>
+    <form onsubmit="handleHabitSubmit(event)">
+     <div class="form-group"><label class="form-label">Habit Name</label> <input type="text" class="form-input" placeholder="e.g., Morning Jog">
+     </div>
+     <div class="form-group"><label class="form-label">Frequency</label> <select class="form-select"> <option>Daily</option> <option>5 days/week</option> <option>3 days/week</option> <option>Weekly</option> </select>
+     </div>
+     <div class="form-group"><label class="form-label">Reminder Time</label> <input type="time" class="form-input">
+     </div>
+     <div class="modal-actions"><button type="button" class="button secondary" onclick="closeModal('habitModal')">Cancel</button> <button type="submit" class="button">Create Habit</button>
+     </div>
+    </form>
+   </div>
+  </div>
+  <div id="contactModal" class="modal-overlay">
+   <div class="modal">
+    <h2 class="modal-title">Add Emergency Contact</h2>
+    <form onsubmit="handleContactSubmit(event)">
+     <div class="form-group"><label class="form-label">Contact Name</label> <input type="text" class="form-input" placeholder="e.g., Mom">
+     </div>
+     <div class="form-group"><label class="form-label">Phone Number</label> <input type="tel" class="form-input" placeholder="+91 98765 43210">
+     </div>
+     <div class="form-group"><label class="form-label">Relationship</label> <input type="text" class="form-input" placeholder="e.g., Family, Doctor">
+     </div>
+     <div class="modal-actions"><button type="button" class="button secondary" onclick="closeModal('contactModal')">Cancel</button> <button type="submit" class="button">Add Contact</button>
+     </div>
+    </form>
+   </div>
+  </div>
+  <script>
+    let appConfig = {
+      app_title: "Smart Health Companion"
+    };
+
+    async function initApp() {
+      if (window.elementSdk) {
+        await window.elementSdk.init({
+          defaultConfig: {
+            app_title: "Smart Health Companion"
+          },
+          onConfigChange: (config) => {
+            appConfig = config;
+          },
+          mapToCapabilities: (config) => ({
+            recolorables: [],
+            borderables: [],
+            fontEditable: undefined,
+            fontSizeable: undefined
+          }),
+          mapToEditPanelValues: (config) => new Map([
+            ["app_title", config.app_title || "Smart Health Companion"]
+          ])
+        });
+      }
+
+      // Initialize navigation
+      document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const section = item.dataset.section;
+          navigateToSection(section);
+        });
+      });
+
+      lucide.createIcons();
+    }
+
+    function navigateToSection(sectionId) {
+      // Hide all sections
+      document.querySelectorAll('.section').forEach(section => {
+        section.classList.remove('active');
+      });
+
+      // Remove active from all sidebar items
+      document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.classList.remove('active');
+      });
+
+      // Show selected section
+      document.getElementById(sectionId).classList.add('active');
+
+      // Mark sidebar item as active
+      document.querySelector(`[data-section="${sectionId}"]`).classList.add('active');
+    }
+
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.add('active');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    function handleProfileSubmit(event) {
+      event.preventDefault();
+      closeModal('profileModal');
+      showNotification('Profile updated successfully!');
+    }
+
+    function handleMedicineSubmit(event) {
+      event.preventDefault();
+      closeModal('medicineModal');
+      showNotification('Medicine added to your routine!');
+    }
+
+    function handleHabitSubmit(event) {
+      event.preventDefault();
+      closeModal('habitModal');
+      showNotification('New habit created! Stay consistent!');
+    }
+
+    function handleContactSubmit(event) {
+      event.preventDefault();
+      closeModal('contactModal');
+      showNotification('Emergency contact added!');
+    }
+
+    function showNotification(message) {
+      // Simple notification (in real app, would use a toast system)
+      console.log('Notification:', message);
+    }
+
+    // Close modals when clicking outside
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.classList.remove('active');
+        }
+      });
+    });
+
+    // Initialize app on load
+    window.addEventListener('DOMContentLoaded', initApp);
+    initApp();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ed070dbe411384f',t:'MTc3NjMxMzY4MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
